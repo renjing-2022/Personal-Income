@@ -37,3 +37,30 @@ def category_breakdown(df: pd.DataFrame, month: str) -> pd.DataFrame:
             lambda x: f"{x / total * 100:.1f}%"
         )
     return grouped.reset_index(drop=True)
+
+
+def _format_change(current: float, previous: float) -> str:
+    if previous == 0:
+        return "—"
+    pct = (current - previous) / previous * 100
+    sign = "+" if pct >= 0 else ""
+    return f"{sign}{pct:.1f}%"
+
+
+def trend_3months(df: pd.DataFrame, month: str) -> list[dict]:
+    target = pd.Period(month, freq="M")
+    months = [target - 2, target - 1, target]
+    result = []
+    prev_expense = None
+    for period in months:
+        month_str = str(period)
+        expense = float(
+            df[(df["年月"] == period) & (df["是支出"])]["金额"].sum()
+        )
+        if prev_expense is None:
+            change = "—"
+        else:
+            change = _format_change(expense, prev_expense)
+        result.append({"month": month_str, "expense": expense, "change": change})
+        prev_expense = expense
+    return result
