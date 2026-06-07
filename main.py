@@ -70,8 +70,7 @@ def main() -> None:
             chart_paths = generate_charts(df, month, args.output)
             export_paths.extend(str(p) for p in chart_paths)
         except ImportError as exc:
-            print(f"错误: {exc}", file=sys.stderr)
-            sys.exit(1)
+            print(f"警告: {exc}，已跳过图表生成", file=sys.stderr)
 
     print_report(overview, breakdown, trend, export_paths)
 

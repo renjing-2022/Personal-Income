@@ -16,6 +16,10 @@ def load_csv(path: str | Path) -> pd.DataFrame:
         raise FileNotFoundError(f"找不到文件: {file_path}")
 
     raw = pd.read_csv(file_path, dtype={"备注": str})
+    missing = set(COLUMNS) - set(raw.columns)
+    if missing:
+        raise ValueError(f"CSV 缺少必需列: {', '.join(sorted(missing))}")
+
     valid_rows = []
 
     for idx, row in raw.iterrows():
