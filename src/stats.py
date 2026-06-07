@@ -15,3 +15,25 @@ def monthly_overview(df: pd.DataFrame, month: str) -> dict:
         "expense": float(expense),
         "balance": float(income - expense),
     }
+
+
+def category_breakdown(df: pd.DataFrame, month: str) -> pd.DataFrame:
+    period = pd.Period(month, freq="M")
+    expenses = df[(df["年月"] == period) & (df["是支出"])]
+    if expenses.empty:
+        return pd.DataFrame(columns=["分类", "支出金额", "占比"])
+
+    grouped = (
+        expenses.groupby("分类", as_index=False)["金额"]
+        .sum()
+        .rename(columns={"金额": "支出金额"})
+        .sort_values("支出金额", ascending=False)
+    )
+    total = grouped["支出金额"].sum()
+    if total == 0:
+        grouped["占比"] = "0.0%"
+    else:
+        grouped["占比"] = grouped["支出金额"].apply(
+            lambda x: f"{x / total * 100:.1f}%"
+        )
+    return grouped.reset_index(drop=True)
