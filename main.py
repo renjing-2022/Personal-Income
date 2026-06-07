@@ -3,6 +3,12 @@ import argparse
 import re
 import sys
 
+from src.chart import generate_charts
+from src.display import print_report
+from src.export import write_detail, write_summary
+from src.loader import get_latest_month, load_csv
+from src.stats import category_breakdown, monthly_overview, trend_3months
+
 
 def parse_month(value: str) -> str:
     if not re.fullmatch(r"\d{4}-\d{2}", value):
@@ -30,8 +36,38 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-    # 业务逻辑在后续 Task 中接入
-    print(f"参数解析成功: input={args.input}, month={args.month}, export={args.export}")
+
+    try:
+        df = load_csv(args.input)
+    except FileNotFoundError as exc:
+        print(f"错误: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as exc:
+        print(f"错误: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    month = args.month or get_latest_month(df)
+    overview = monthly_overview(df, month)
+    breakdown = category_breakdown(df, month)
+    trend = trend_3months(df, month)
+
+    export_paths: list[str] = []
+    if args.export == "summary":
+        path = write_summary(breakdown, month, args.output)
+        export_paths.append(str(path))
+    else:
+        path = write_detail(df, month, args.output)
+        export_paths.append(str(path))
+
+    if args.chart:
+        try:
+            chart_paths = generate_charts(df, month, args.output)
+            export_paths.extend(str(p) for p in chart_paths)
+        except ImportError as exc:
+            print(f"错误: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+    print_report(overview, breakdown, trend, export_paths)
 
 
 if __name__ == "__main__":
