@@ -1,3 +1,4 @@
+.cursor/
 .worktrees/
 .venv/
 __pycache__/
